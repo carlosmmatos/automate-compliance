@@ -89,8 +89,8 @@ func main() {
 
 	// Accessing the data in the spreadsheet
 	// Using the following NIST RHACM 800-53 Example sheet:
-	// https://docs.google.com/spreadsheets/d/1uPrOsX8pmHlPtThvojKcClwWMwZEEOP9cH5vqLKHNis/edit
-	spreadsheetId := "1uPrOsX8pmHlPtThvojKcClwWMwZEEOP9cH5vqLKHNis"
+	// https://docs.google.com/spreadsheets/d/12883Aj3eK3O0mgOesZMVnoVf8UmEPf1kPMyqFP7cp68/edit
+	spreadsheetId := "12883Aj3eK3O0mgOesZMVnoVf8UmEPf1kPMyqFP7cp68"
 	readRange := "800-53-controls-new!B2:M"
 	resp, err := srv.Spreadsheets.Values.Get(spreadsheetId, readRange).ValueRenderOption("FORMATTED_VALUE").Do()
 	if err != nil {
