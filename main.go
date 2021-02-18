@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/carlosmmatos/automate-compliance/internal/parser"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -69,6 +70,10 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
+func normalizeControl(control string) {
+
+}
+
 func main() {
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
@@ -91,7 +96,7 @@ func main() {
 	// Using the following NIST RHACM 800-53 Example sheet:
 	// https://docs.google.com/spreadsheets/d/12883Aj3eK3O0mgOesZMVnoVf8UmEPf1kPMyqFP7cp68/edit
 	spreadsheetId := "12883Aj3eK3O0mgOesZMVnoVf8UmEPf1kPMyqFP7cp68"
-	readRange := "800-53-controls-new!B2:M"
+	readRange := "800-53-controls-new!A2:M"
 	resp, err := srv.Spreadsheets.Values.Get(spreadsheetId, readRange).ValueRenderOption("FORMATTED_VALUE").Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve data from sheet: %v", err)
@@ -105,9 +110,27 @@ func main() {
 	if len(resp.Values) == 0 {
 		fmt.Println("No data found.")
 	} else {
+		p := parser.NewParser()
 		fmt.Println("Control ID, Status, Product Implementation, Notes:")
 		for _, row := range resp.Values {
-			fmt.Printf("%s, %s, %s, %s\n", row[0], row[5], row[7], row[10])
+			family := row[0].(string)
+			control := row[1].(string)
+			err := p.ParseEntry(family, control)
+			if err != nil {
+				fmt.Printf("Found error in control %s: %v\n", control, err)
+				os.Exit(1)
+			}
+			fmt.Printf("Raw Entry: %s, %s, %s, %s\n", row[1], row[5], row[7], row[10])
+		}
+
+		fmt.Printf("Parsed data\n")
+		fmt.Printf("===========\n\n")
+
+		for family, controls := range p.GetData() {
+			fmt.Printf("> %s\n", family)
+			for _, ctrl := range controls {
+				fmt.Printf("- %v\n", ctrl)
+			}
 		}
 	}
 }
