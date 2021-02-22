@@ -85,6 +85,7 @@ func (p *Parser) parseControl(control string) (opencontrol.OpenControlEntry, err
 	if p.simpleCtrl.MatchString(ctrlNw) {
 		matches := p.simpleCtrl.FindStringSubmatch(ctrlNw)
 		ctrl.ControlKey = getControlKey(matches)
+		ctrl.Narrative = append(ctrl.Narrative, getTextOnlyNarrative())
 		return ctrl, nil
 	} else if p.ctrlEnh.MatchString(ctrlNw) {
 		matches := p.ctrlEnh.FindStringSubmatch(ctrlNw)
@@ -94,10 +95,12 @@ func (p *Parser) parseControl(control string) (opencontrol.OpenControlEntry, err
 	} else if p.simpleSubCtrl.MatchString(ctrlNw) {
 		matches := p.simpleSubCtrl.FindStringSubmatch(ctrlNw)
 		ctrl.ControlKey = getSubControlKey(matches)
+		ctrl.Narrative = append(ctrl.Narrative, getTextOnlyNarrative())
 		return ctrl, nil
 	} else if p.subCtrlEnh.MatchString(ctrlNw) {
 		matches := p.subCtrlEnh.FindStringSubmatch(ctrlNw)
 		ctrl.ControlKey = getSubControlKey(matches)
+		ctrl.Narrative = append(ctrl.Narrative, getNarrativeForEnhancement(matches[4]))
 		return ctrl, nil
 	} else {
 		// no match
@@ -117,10 +120,18 @@ func getSubControlKey(matches []string) string {
 	return fmt.Sprintf("%s-%s %s", matches[1], matches[2], matches[3])
 }
 
+func getTextOnlyNarrative() opencontrol.NarrativeEntry {
+	// TODO(jaosorior): get text from spreadsheet
+	return opencontrol.NarrativeEntry{
+		Text: "Text only",
+	}
+}
+
 func getNarrativeForEnhancement(enhancement string) opencontrol.NarrativeEntry {
+	// TODO(jaosorior): get text from spreadsheet
 	return opencontrol.NarrativeEntry{
 		Key:  normalizeEnhacementKey(enhancement),
-		Text: "Foo",
+		Text: "Text for enhancement",
 	}
 }
 

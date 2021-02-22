@@ -18,3 +18,7 @@ $(BINDIR):
 .PHONY: run
 run: build
 	./$(BIN)
+
+.PHONY: test-unit
+test-unit:
+	go test -v -race ./...
