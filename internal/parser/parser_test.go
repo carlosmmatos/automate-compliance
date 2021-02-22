@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/carlosmmatos/automate-compliance/internal/opencontrol"
+	v3c "github.com/opencontrol/compliance-masonry/pkg/lib/components/versions/3_1_0"
 )
 
-func buildControlEntryWithDefaults(key string, n opencontrol.NarrativeEntry) opencontrol.OpenControlEntry {
-	oce := opencontrol.ControlEntryWithDefaults()
+func buildControlEntryWithDefaults(key string, n v3c.NarrativeSection) v3c.Satisfies {
+	oce := v3c.Satisfies{}
 	oce.ControlKey = key
 	oce.Narrative = append(oce.Narrative, n)
 	return oce
@@ -24,13 +24,13 @@ func TestParser_normalizeFamily(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want opencontrol.Family
+		want controlFamily
 	}{
 		{
-			"simple family", args{"ACCESS CONTROL"}, opencontrol.Family("ACCESS_CONTROL"),
+			"simple family", args{"ACCESS CONTROL"}, controlFamily("ACCESS_CONTROL"),
 		},
 		{
-			"family with extra spaces", args{"ACCESS   CONTROL"}, opencontrol.Family("ACCESS_CONTROL"),
+			"family with extra spaces", args{"ACCESS   CONTROL"}, controlFamily("ACCESS_CONTROL"),
 		},
 	}
 	for _, tt := range tests {
@@ -52,13 +52,13 @@ func TestParser_parseControl(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    opencontrol.OpenControlEntry
+		want    v3c.Satisfies
 		wantErr bool
 	}{
 		{
 			"Simple control is successfully parsed",
 			args{"AC-1"},
-			buildControlEntryWithDefaults("AC-1", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-1", v3c.NarrativeSection{
 				Text: "Text only",
 			}),
 			false,
@@ -66,7 +66,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Control with enhancement is successfully parsed",
 			args{"AC-2a."},
-			buildControlEntryWithDefaults("AC-2", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-2", v3c.NarrativeSection{
 				Key:  "a",
 				Text: "Text for enhancement",
 			}),
@@ -75,7 +75,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Control with enhancement and sub-enhancement is successfully parsed",
 			args{"AC-2a.1."},
-			buildControlEntryWithDefaults("AC-2", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-2", v3c.NarrativeSection{
 				Key:  "a.1",
 				Text: "Text for enhancement",
 			}),
@@ -84,7 +84,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Simple Sub-control is successfully parsed",
 			args{"AC-2 (1)"},
-			buildControlEntryWithDefaults("AC-2 (1)", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-2 (1)", v3c.NarrativeSection{
 				Text: "Text only",
 			}),
 			false,
@@ -92,7 +92,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Simple Sub-control with high number is successfully parsed",
 			args{"SC-42 (3)"},
-			buildControlEntryWithDefaults("SC-42 (3)", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("SC-42 (3)", v3c.NarrativeSection{
 				Text: "Text only",
 			}),
 			false,
@@ -102,7 +102,7 @@ func TestParser_parseControl(t *testing.T) {
 			// parsed properly. This ensures that such values are parsed.
 			"Simple Sub-control (above 9) is successfully parsed",
 			args{"AC-2 (21)"},
-			buildControlEntryWithDefaults("AC-2 (21)", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-2 (21)", v3c.NarrativeSection{
 				Text: "Text only",
 			}),
 			false,
@@ -110,7 +110,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Sub-control with enhancement is successfully parsed",
 			args{"AC-3 (3)(a)"},
-			buildControlEntryWithDefaults("AC-3 (3)", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-3 (3)", v3c.NarrativeSection{
 				Key:  "a",
 				Text: "Text for enhancement",
 			}),
@@ -119,7 +119,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Sub-control with enhancement and sub-enhancement is successfully parsed",
 			args{"AC-3 (3)(b)(1)"},
-			buildControlEntryWithDefaults("AC-3 (3)", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-3 (3)", v3c.NarrativeSection{
 				// TODO(jaosorior): What's the appropriate value here?
 				//                  I couldn't find examples... and so I
 				//                  left it at  just the enhancement number.
@@ -131,7 +131,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Sub-control with enhancement and extra spaces is successfully parsed",
 			args{"AC-3   (3)(a)"},
-			buildControlEntryWithDefaults("AC-3 (3)", opencontrol.NarrativeEntry{
+			buildControlEntryWithDefaults("AC-3 (3)", v3c.NarrativeSection{
 				Key:  "a",
 				Text: "Text for enhancement",
 			}),
@@ -140,7 +140,7 @@ func TestParser_parseControl(t *testing.T) {
 		{
 			"Malformed control returns an error",
 			args{"SC-43a)"},
-			opencontrol.ControlEntryWithDefaults(),
+			v3c.Satisfies{},
 			true,
 		},
 	}

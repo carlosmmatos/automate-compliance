@@ -5,8 +5,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/carlosmmatos/automate-compliance/internal/opencontrol"
+	v3c "github.com/opencontrol/compliance-masonry/pkg/lib/components/versions/3_1_0"
 )
+
+type controlFamily string
 
 type Parser struct {
 	// whitespace regex
@@ -19,7 +21,7 @@ type Parser struct {
 	simpleSubCtrl *regexp.Regexp
 	// subcontrol with enhancements
 	subCtrlEnh *regexp.Regexp
-	data       map[opencontrol.Family]map[string]opencontrol.OpenControlEntry
+	data       map[controlFamily]map[string]v3c.Satisfies
 }
 
 func NewParser() *Parser {
@@ -36,7 +38,7 @@ func NewParser() *Parser {
 		// NOTE(jaosorior): This ignores any sub-entries in the enhancement... so it'll
 		// match AC-3 (3)(b)(1) and AC-3 (3)(b)(2) as the same entry -> AC-3 (3)(b)
 		subCtrlEnh: regexp.MustCompile(`^([A-Z]+)-([0-9]+) (\([0-9]+\))\(([a-z])\).*$`),
-		data:       make(map[opencontrol.Family]map[string]opencontrol.OpenControlEntry),
+		data:       make(map[controlFamily]map[string]v3c.Satisfies),
 	}
 }
 
@@ -47,7 +49,7 @@ func (p *Parser) ParseEntry(family, control string) error {
 
 	if !foundFam {
 		// initialize control entries
-		ctrls = make(map[string]opencontrol.OpenControlEntry)
+		ctrls = make(map[string]v3c.Satisfies)
 		p.data[nfamily] = ctrls
 	}
 
@@ -73,15 +75,15 @@ func (p *Parser) ParseEntry(family, control string) error {
 // NOTE(jaosorior): This currently only replaces spaces for underscores...
 // we should probably replace this function with something that gets a
 // standardized name somehow
-func (p *Parser) normalizeFamily(family string) opencontrol.Family {
-	return opencontrol.Family(p.wre.ReplaceAllString(family, "_"))
+func (p *Parser) normalizeFamily(family string) controlFamily {
+	return controlFamily(p.wre.ReplaceAllString(family, "_"))
 }
 
-func (p *Parser) parseControl(control string) (opencontrol.OpenControlEntry, error) {
+func (p *Parser) parseControl(control string) (v3c.Satisfies, error) {
 	// control without extra whitespaces
 	ctrlNw := p.wre.ReplaceAllString(control, " ")
 
-	ctrl := opencontrol.ControlEntryWithDefaults()
+	ctrl := v3c.Satisfies{}
 	if p.simpleCtrl.MatchString(ctrlNw) {
 		matches := p.simpleCtrl.FindStringSubmatch(ctrlNw)
 		ctrl.ControlKey = getControlKey(matches)
@@ -108,7 +110,7 @@ func (p *Parser) parseControl(control string) (opencontrol.OpenControlEntry, err
 	}
 }
 
-func (p *Parser) GetData() map[opencontrol.Family]map[string]opencontrol.OpenControlEntry {
+func (p *Parser) GetData() map[controlFamily]map[string]v3c.Satisfies {
 	return p.data
 }
 
@@ -120,16 +122,16 @@ func getSubControlKey(matches []string) string {
 	return fmt.Sprintf("%s-%s %s", matches[1], matches[2], matches[3])
 }
 
-func getTextOnlyNarrative() opencontrol.NarrativeEntry {
+func getTextOnlyNarrative() v3c.NarrativeSection {
 	// TODO(jaosorior): get text from spreadsheet
-	return opencontrol.NarrativeEntry{
+	return v3c.NarrativeSection{
 		Text: "Text only",
 	}
 }
 
-func getNarrativeForEnhancement(enhancement string) opencontrol.NarrativeEntry {
+func getNarrativeForEnhancement(enhancement string) v3c.NarrativeSection {
 	// TODO(jaosorior): get text from spreadsheet
-	return opencontrol.NarrativeEntry{
+	return v3c.NarrativeSection{
 		Key:  normalizeEnhacementKey(enhancement),
 		Text: "Text for enhancement",
 	}
@@ -139,7 +141,7 @@ func normalizeEnhacementKey(e string) string {
 	return strings.TrimRight(e, ".")
 }
 
-func mergeControls(old, new opencontrol.OpenControlEntry) opencontrol.OpenControlEntry {
+func mergeControls(old, new v3c.Satisfies) v3c.Satisfies {
 	// The controlKey is the same so we don't need to merge these.
 
 	// TODO(jaosorior): Gotta handle implementation status
