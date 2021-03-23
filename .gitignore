@@ -17,3 +17,6 @@ bin/
 # Ignore token.json
 token.json
 credentials.json
+
+# Ignore IDE crap
+.idea
