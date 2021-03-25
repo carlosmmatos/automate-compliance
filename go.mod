@@ -8,7 +8,7 @@ require (
 	github.com/opencontrol/compliance-masonry v1.1.6
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84
-	google.golang.org/api v0.42.0
+	google.golang.org/api v0.43.0
 	vbom.ml/util/sortorder v0.0.0-00010101000000-000000000000 // indirect
 )
 
