@@ -27,10 +27,10 @@ func TestParser_normalizeFamily(t *testing.T) {
 		want controlFamily
 	}{
 		{
-			"simple family", args{"ACCESS CONTROL"}, controlFamily("ACCESS_CONTROL"),
+			"simple family", args{"ACCESS CONTROL"}, controlFamily("AC-Access_Control"),
 		},
 		{
-			"family with extra spaces", args{"ACCESS   CONTROL"}, controlFamily("ACCESS_CONTROL"),
+			"family with extra spaces", args{"ACCESS   CONTROL"}, controlFamily("AC-Access_Control"),
 		},
 	}
 	for _, tt := range tests {
@@ -120,11 +120,8 @@ func TestParser_parseControl(t *testing.T) {
 			"Sub-control with enhancement and sub-enhancement is successfully parsed",
 			args{"AC-3 (3)(b)(1)"},
 			buildControlEntryWithDefaults("AC-3 (3)", v3c.NarrativeSection{
-				// TODO(jaosorior): What's the appropriate value here?
-				//                  I couldn't find examples... and so I
-				//                  left it at  just the enhancement number.
-				Key:  "b",
-				Text: "Text for enhancement",
+				Key:  "b.1",
+				Text: "Text for enhancement plus",
 			}),
 			false,
 		},
