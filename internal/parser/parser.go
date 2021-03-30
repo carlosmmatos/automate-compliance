@@ -26,50 +26,6 @@ type Parser struct {
 	data           map[controlFamily]map[string]v3c.Satisfies
 }
 
-// parseFamily takes a string and returns an OpenControl friendly format for NIST Family.
-func parseFamily(family string) string {
-	switch family {
-	case "ACCESS_CONTROL":
-		return "AC-Access_Control"
-	case "AUDIT_AND_ACCOUNTABILITY":
-		return "AU-Audit_and_Accountability"
-	case "AWARENESS_AND_TRAINING":
-		return "AT-Awareness_and_Training"
-	case "CONFIGURATION_MANAGEMENT":
-		return "CM-Configuration_Management"
-	case "CONTINGENCY_PLANNING":
-		return "CP-Contingency_Planning"
-	case "IDENTIFICATION_AND_AUTHENTICATION":
-		return "IA-Identification_and_Authentication"
-	case "INCIDENT_RESPONSE":
-		return "IR-Incident_Response"
-	case "MAINTENANCE":
-		return "MA-Maintenance"
-	case "MEDIA_PROTECTION":
-		return "MP-Media_Protection"
-	case "PERSONNEL_SECURITY":
-		return "PS-Personnel_Security"
-	case "PHYSICAL_AND_ENVIRONMENTAL PROTECTION":
-		return "PE-Physical_and_Environmental_Protection"
-	case "PLANNING":
-		return "PL-Planning"
-	case "PROGRAM_MANAGEMENT":
-		return "PM-Program_Management"
-	case "RISK_ASSESSMENT":
-		return "RA-Risk_Assessment"
-	case "SECURITY_ASSESSMENT_AND_AUTHORIZATION":
-		return "CA-Security_Assessment_and_Authorization"
-	case "SYSTEM_AND_COMMUNICATIONS_PROTECTION":
-		return "SC-System_and_Communications_Protection"
-	case "SYSTEM_AND_INFORMATION_INTEGRITY":
-		return "SI-System_and_Information_Integrity"
-	case "SYSTEM_AND_SERVICES_ACQUISITION":
-		return "SA-System_and_Services_Acquisition"
-	default:
-		return ""
-	}
-}
-
 func NewParser() *Parser {
 	return &Parser{
 		// whitespace regex
@@ -121,7 +77,7 @@ func (p *Parser) ParseEntry(family, control string) error {
 func (p *Parser) normalizeFamily(family string) controlFamily {
 	// Ensure we take care of whitespace issues
 	nFamily := p.wre.ReplaceAllString(family, "_")
-	return controlFamily(parseFamily(nFamily))
+	return controlFamily(ParseFamily(nFamily))
 }
 
 // parseControl parses a NIST 800-53 control and ensures it conforms to the 
@@ -133,31 +89,26 @@ func (p *Parser) parseControl(control string) (v3c.Satisfies, error) {
 	ctrl := v3c.Satisfies{}
 	if p.simpleCtrl.MatchString(ctrlNw) {
 		matches := p.simpleCtrl.FindStringSubmatch(ctrlNw)
-		fmt.Println("simpleCtrl:", matches)
 		ctrl.ControlKey = getControlKey(matches)
 		ctrl.Narrative = append(ctrl.Narrative, getTextOnlyNarrative())
 		return ctrl, nil
 	} else if p.ctrlEnh.MatchString(ctrlNw) {
 		matches := p.ctrlEnh.FindStringSubmatch(ctrlNw)
-		fmt.Println("ctrlEnh", matches)
 		ctrl.ControlKey = getControlKey(matches)
 		ctrl.Narrative = append(ctrl.Narrative, getNarrativeForEnhancement(matches[3]))
 		return ctrl, nil
 	} else if p.simpleSubCtrl.MatchString(ctrlNw) {
 		matches := p.simpleSubCtrl.FindStringSubmatch(ctrlNw)
-		fmt.Println("simpleSubCtrl", matches)
 		ctrl.ControlKey = getSubControlKey(matches)
 		ctrl.Narrative = append(ctrl.Narrative, getTextOnlyNarrative())
 		return ctrl, nil
 	} else if p.subCtrlEnh.MatchString(ctrlNw) {
 		matches := p.subCtrlEnh.FindStringSubmatch(ctrlNw)
-		fmt.Println("subCtrlEnh", matches)
 		ctrl.ControlKey = getSubControlKey(matches)
 		ctrl.Narrative = append(ctrl.Narrative, getNarrativeForEnhancement(matches[4]))
 		return ctrl, nil
 	} else if p.subCtrlEnhPlus.MatchString(ctrlNw) {
 		matches := p.subCtrlEnhPlus.FindStringSubmatch(ctrlNw)
-		fmt.Println("subCtrlEnhPlus", matches)
 		ctrl.ControlKey = getSubControlKey(matches)
 		ctrl.Narrative = append(ctrl.Narrative, getNarrativeForEnhancementPlus(matches))
 		return ctrl, nil
@@ -168,7 +119,28 @@ func (p *Parser) parseControl(control string) (v3c.Satisfies, error) {
 }
 
 func (p *Parser) GetData() map[controlFamily]map[string]v3c.Satisfies {
+	removeNarrative(p.data)
 	return p.data
+}
+
+// removeNarrative removes the first text Narrative from controls with additional controls
+// and enhancements. Fixes https://github.com/carlosmmatos/automate-compliance/issues/12
+func removeNarrative(p map[controlFamily]map[string]v3c.Satisfies) {
+	for _, ctrl := range p {
+		for _, v := range ctrl {
+			if len(v.Narrative) > 1 {
+				// when length of Narrative > 1, we know we can safely remove the first
+				// index, which would be for the primary control key.
+				ctrl[v.ControlKey] = remove(v)
+			}
+		}
+	}
+}
+
+// remove deletes the first element of a slice, while maintaining order
+func remove(old v3c.Satisfies) v3c.Satisfies {
+	old.Narrative = append(old.Narrative[:0], old.Narrative[1:]...)
+	return old
 }
 
 func getControlKey(matches []string) string {

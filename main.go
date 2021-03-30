@@ -96,7 +96,7 @@ func main() {
 	// Using the following NIST RHACM 800-53 Example sheet:
 	// https://docs.google.com/spreadsheets/d/12883Aj3eK3O0mgOesZMVnoVf8UmEPf1kPMyqFP7cp68/edit
 	spreadsheetId := "12883Aj3eK3O0mgOesZMVnoVf8UmEPf1kPMyqFP7cp68"
-	readRange := "800-53-controls-new!A2:M75"
+	readRange := "800-53-controls-new!A2:M"
 	resp, err := srv.Spreadsheets.Values.Get(spreadsheetId, readRange).ValueRenderOption("FORMATTED_VALUE").Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve data from sheet: %v", err)
@@ -111,7 +111,6 @@ func main() {
 		fmt.Println("No data found.")
 	} else {
 		p := parser.NewParser()
-		fmt.Println("Control, Implementation Status, Narrative:")
 		for _, row := range resp.Values {
 			family := row[0].(string)
 			control := row[1].(string)
@@ -120,7 +119,6 @@ func main() {
 				fmt.Printf("Found error in control %s: %v\n", control, err)
 				os.Exit(1)
 			}
-			//fmt.Printf("Raw Entry: %s, %s, %s\n", row[1], row[8], row[11])
 		}
 
 		fmt.Printf("Parsed data\n")
