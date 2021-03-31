@@ -3,16 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/carlosmmatos/automate-compliance/internal/parser"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -87,7 +87,7 @@ func main() {
 	}
 	client := getClient(config)
 
-	srv, err := sheets.New(client)
+	srv, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
 	}
@@ -111,7 +111,6 @@ func main() {
 		fmt.Println("No data found.")
 	} else {
 		p := parser.NewParser()
-		fmt.Println("Control ID, Status, Product Implementation, Notes:")
 		for _, row := range resp.Values {
 			family := row[0].(string)
 			control := row[1].(string)
@@ -120,7 +119,6 @@ func main() {
 				fmt.Printf("Found error in control %s: %v\n", control, err)
 				os.Exit(1)
 			}
-			fmt.Printf("Raw Entry: %s, %s, %s, %s\n", row[1], row[5], row[7], row[10])
 		}
 
 		fmt.Printf("Parsed data\n")

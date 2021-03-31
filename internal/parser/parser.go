@@ -20,8 +20,10 @@ type Parser struct {
 	// subcontrol with enhancements
 	simpleSubCtrl *regexp.Regexp
 	// subcontrol with enhancements
-	subCtrlEnh *regexp.Regexp
-	data       map[controlFamily]map[string]v3c.Satisfies
+	subCtrlEnh     *regexp.Regexp
+	// subcontrol with extra enhancements
+	subCtrlEnhPlus *regexp.Regexp
+	data           map[controlFamily]map[string]v3c.Satisfies
 }
 
 func NewParser() *Parser {
@@ -35,9 +37,10 @@ func NewParser() *Parser {
 		// subcontrol with enhancements ([1] control family [2] control number [3] sub-control)
 		simpleSubCtrl: regexp.MustCompile(`^([A-Z]+)-([0-9]+) (\([0-9]+\))$`),
 		// subcontrol with enhancements ([1] control family [2] control number [3] sub-control [4] enhancement)
-		// NOTE(jaosorior): This ignores any sub-entries in the enhancement... so it'll
-		// match AC-3 (3)(b)(1) and AC-3 (3)(b)(2) as the same entry -> AC-3 (3)(b)
-		subCtrlEnh: regexp.MustCompile(`^([A-Z]+)-([0-9]+) (\([0-9]+\))\(([a-z])\).*$`),
+		subCtrlEnh: regexp.MustCompile(`^([A-Z]+)-([0-9]+) (\([0-9]+\))\(([a-z])\)$`),
+		// subcontrol with additional enhancements ([1] control family [2] control number [3] sub-control 
+		// [4] enhancement + [5] additional_enhancement)
+		subCtrlEnhPlus: regexp.MustCompile(`^([A-Z]+)-([0-9]+) (\([0-9]+\))\(([a-z])\)\(([0-9]+)\)$`),
 		data:       make(map[controlFamily]map[string]v3c.Satisfies),
 	}
 }
@@ -52,7 +55,7 @@ func (p *Parser) ParseEntry(family, control string) error {
 		ctrls = make(map[string]v3c.Satisfies)
 		p.data[nfamily] = ctrls
 	}
-
+	
 	parsedCtrl, err := p.parseControl(control)
 	if err != nil {
 		return err
@@ -71,14 +74,14 @@ func (p *Parser) ParseEntry(family, control string) error {
 
 // normalizeFamily normalizes the family name into something more
 // fitting for OpenControl.
-//
-// NOTE(jaosorior): This currently only replaces spaces for underscores...
-// we should probably replace this function with something that gets a
-// standardized name somehow
 func (p *Parser) normalizeFamily(family string) controlFamily {
-	return controlFamily(p.wre.ReplaceAllString(family, "_"))
+	// Ensure we take care of whitespace issues
+	nFamily := p.wre.ReplaceAllString(family, "_")
+	return controlFamily(ParseFamily(nFamily))
 }
 
+// parseControl parses a NIST 800-53 control and ensures it conforms to the 
+// OpenControl Satisfies struct.
 func (p *Parser) parseControl(control string) (v3c.Satisfies, error) {
 	// control without extra whitespaces
 	ctrlNw := p.wre.ReplaceAllString(control, " ")
@@ -104,14 +107,40 @@ func (p *Parser) parseControl(control string) (v3c.Satisfies, error) {
 		ctrl.ControlKey = getSubControlKey(matches)
 		ctrl.Narrative = append(ctrl.Narrative, getNarrativeForEnhancement(matches[4]))
 		return ctrl, nil
+	} else if p.subCtrlEnhPlus.MatchString(ctrlNw) {
+		matches := p.subCtrlEnhPlus.FindStringSubmatch(ctrlNw)
+		ctrl.ControlKey = getSubControlKey(matches)
+		ctrl.Narrative = append(ctrl.Narrative, getNarrativeForEnhancementPlus(matches))
+		return ctrl, nil
 	} else {
 		// no match
-		return ctrl, fmt.Errorf("Couldn't parse control")
+		return ctrl, fmt.Errorf("couldn't parse control")
 	}
 }
 
 func (p *Parser) GetData() map[controlFamily]map[string]v3c.Satisfies {
+	removeNarrative(p.data)
 	return p.data
+}
+
+// removeNarrative removes the first text Narrative from controls with additional controls
+// and enhancements. Fixes https://github.com/carlosmmatos/automate-compliance/issues/12
+func removeNarrative(p map[controlFamily]map[string]v3c.Satisfies) {
+	for _, ctrl := range p {
+		for _, v := range ctrl {
+			if len(v.Narrative) > 1 {
+				// when length of Narrative > 1, we know we can safely remove the first
+				// index, which would be for the primary control key.
+				ctrl[v.ControlKey] = remove(v)
+			}
+		}
+	}
+}
+
+// remove deletes the first element of a slice, while maintaining order
+func remove(old v3c.Satisfies) v3c.Satisfies {
+	old.Narrative = append(old.Narrative[:0], old.Narrative[1:]...)
+	return old
 }
 
 func getControlKey(matches []string) string {
@@ -132,13 +161,26 @@ func getTextOnlyNarrative() v3c.NarrativeSection {
 func getNarrativeForEnhancement(enhancement string) v3c.NarrativeSection {
 	// TODO(jaosorior): get text from spreadsheet
 	return v3c.NarrativeSection{
-		Key:  normalizeEnhacementKey(enhancement),
+		Key:  normalizeEnhancementKey(enhancement),
 		Text: "Text for enhancement",
 	}
 }
 
-func normalizeEnhacementKey(e string) string {
+func getNarrativeForEnhancementPlus(matches []string) v3c.NarrativeSection {
+	// handles use case: AC-3 (3)(b)(2)
+	return v3c.NarrativeSection{
+		Key: normalizeEnhancementPlusKey(matches),
+		Text: "Text for enhancement plus",
+	}
+}
+
+func normalizeEnhancementKey(e string) string {
 	return strings.TrimRight(e, ".")
+}
+
+func normalizeEnhancementPlusKey(matches []string) string {
+	// Return b.2 from AC-3 (3)(b)(2)
+	return fmt.Sprintf("%s.%s", matches[4], matches[5])
 }
 
 func mergeControls(old, new v3c.Satisfies) v3c.Satisfies {
