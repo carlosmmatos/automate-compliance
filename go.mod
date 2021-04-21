@@ -7,8 +7,8 @@ require (
 	github.com/fatih/set v0.2.1 // indirect
 	github.com/opencontrol/compliance-masonry v1.1.6
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4
-	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
-	google.golang.org/api v0.44.0
+	golang.org/x/oauth2 v0.0.0-20210413134643-5e61552d6c78
+	google.golang.org/api v0.45.0
 	vbom.ml/util/sortorder v0.0.0-00010101000000-000000000000 // indirect
 )
 
