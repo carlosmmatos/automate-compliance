@@ -1,4 +1,4 @@
-# cloud.google.com/go v0.81.0
+# cloud.google.com/go v0.83.0
 cloud.google.com/go/compute/metadata
 # github.com/blang/semver v3.5.1+incompatible
 ## explicit
@@ -47,7 +47,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.0.0-20210427180440-81ed05c6b58c
+# golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 ## explicit
 golang.org/x/oauth2
 golang.org/x/oauth2/authhandler
@@ -56,7 +56,7 @@ golang.org/x/oauth2/google/internal/externalaccount
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20210503080704-8803ae5d1324
+# golang.org/x/sys v0.0.0-20210603125802-9665404d3644
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.6
@@ -64,7 +64,7 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# google.golang.org/api v0.46.0
+# google.golang.org/api v0.48.0
 ## explicit
 google.golang.org/api/googleapi
 google.golang.org/api/googleapi/transport
@@ -90,9 +90,9 @@ google.golang.org/appengine/internal/modules
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20210429181445-86c259c2b4ab
+# google.golang.org/genproto v0.0.0-20210604141403-392c879c8b08
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.37.0
+# google.golang.org/grpc v1.38.0
 google.golang.org/grpc
 google.golang.org/grpc/attributes
 google.golang.org/grpc/backoff
