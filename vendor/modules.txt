@@ -47,7 +47,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.0.0-20210615190721-d04028783cf1
+# golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 ## explicit
 golang.org/x/oauth2
 golang.org/x/oauth2/authhandler
@@ -64,7 +64,7 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# google.golang.org/api v0.49.0
+# google.golang.org/api v0.50.0
 ## explicit
 google.golang.org/api/googleapi
 google.golang.org/api/googleapi/transport
@@ -90,7 +90,7 @@ google.golang.org/appengine/internal/modules
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced
+# google.golang.org/genproto v0.0.0-20210624195500-8bfb893ecb84
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.38.0
 google.golang.org/grpc
